@@ -1,11 +1,17 @@
 """
 SCRIPT NAME:
-    MF2P.py
+    Cycle_inf_risk.py
 
 DESCRIPTION:
-    Models a matrix of values given two variables.
+    Predicts the percieved risk of cycle infrastructure based on user profile and scenario.
 
 FUNCTIONS:
+    Functions used to turn on/off sections of code:
+        load_data()
+        flatten_profile()
+        flatten_ratings()
+        combine_data()
+        clean_data()
 
 UPDATE RECORD:
 Date          Version     Author         Description
@@ -170,8 +176,103 @@ def combine_data():
     
 #combine_data()
 
+#%% Clean data
+def clean_data():
+    global clean_data
+    
+    flattened_data = pd.read_csv('flattened_data.csv')
+    
+    # Filter for columns of interest
+    clean_data = flattened_data[['profile_gender', 'profile_zipcode', 'profile_ageGroup',
+                                'profile_bicycleUse', 'profile_hasChildren', 'profile_perspective',
+                                'profile_transportRatings_car', 'profile_transportRatings_public',
+                                'profile_transportRatings_bicycle', 'profile_transportRatings_motorbike',
+                                'profile_transportRatings_pedestrian', 'profile_transportRatings_safe',
+                                'profile_transportRatings_faster', 'profile_transportRatings_bikefun',
+                                'profile_transportRatings_weather', 'ratings_scene_id', 'ratings_rating']]
+    
+    # Convert non-numerical values to numerical
+    # 'profile_gender': m = 1, w = 2, d = 3, nan = -9999
+    print(clean_data.profile_gender.unique())
+    clean_data.loc[clean_data['profile_gender'] == 'm', 'profile_gender'] = 1
+    clean_data.loc[clean_data['profile_gender'] == 'w', 'profile_gender'] = 2
+    clean_data.loc[clean_data['profile_gender'] == 'd', 'profile_gender'] = 3
+    clean_data.loc[clean_data['profile_gender'].isnull(), 'profile_gender'] = -9999
+    
+    # 'profile_zipcode': nan = -9999
+    print(clean_data.profile_zipcode.unique())
+    clean_data.loc[clean_data['profile_zipcode'].isnull(), 'profile_zipcode'] = -9999
+    
+    # 'profile_ageGroup': nan = -9999
+    print(clean_data.profile_ageGroup.unique())
+    clean_data.loc[clean_data['profile_ageGroup'].isnull(), 'profile_ageGroup'] = -9999
+    
+    # 'profile_bicycleUse': nan = -9999
+    print(clean_data.profile_bicycleUse.unique())
+    clean_data.loc[clean_data['profile_bicycleUse'].isnull(), 'profile_bicycleUse'] = -9999
+    
+    # 'profile_hasChildren': True = 1, False = 0, nan = -9999
+    print(clean_data.profile_hasChildren.unique())
+    clean_data.loc[clean_data['profile_hasChildren'] == True, 'profile_hasChildren'] = 1
+    clean_data.loc[clean_data['profile_hasChildren'] == False, 'profile_hasChildren'] = 0
+    clean_data.loc[clean_data['profile_hasChildren'].isnull(), 'profile_hasChildren'] = -9999
+    
+    # 'profile_perspective': C = 1, A = 2, P = 3
+    print(clean_data.profile_perspective.unique())
+    clean_data.loc[clean_data['profile_perspective'] == 'C', 'profile_perspective'] = 1
+    clean_data.loc[clean_data['profile_perspective'] == 'A', 'profile_perspective'] = 2
+    clean_data.loc[clean_data['profile_perspective'] == 'P', 'profile_perspective'] = 3
+
+    # 'profile_transportRatings_car':
+    print(clean_data.profile_transportRatings_car.unique())
+    
+    # 'profile_transportRatings_public':
+    print(clean_data.profile_transportRatings_public.unique())  
+    
+    # 'profile_transportRatings_bicycle':
+    print(clean_data.profile_transportRatings_bicycle.unique())  
+    
+    # 'profile_transportRatings_motorbike':
+    print(clean_data.profile_transportRatings_motorbike.unique())  
+    
+    # 'profile_transportRatings_pedestrian':
+    print(clean_data.profile_transportRatings_pedestrian.unique())  
+   
+    # 'profile_transportRatings_safe': nan = -9999
+    print(clean_data.profile_transportRatings_safe.unique())
+    clean_data.loc[clean_data['profile_transportRatings_safe'].isnull(), 'profile_transportRatings_safe'] = -9999
+    
+    # 'profile_transportRatings_faster': nan = -9999
+    print(clean_data.profile_transportRatings_faster.unique())
+    clean_data.loc[clean_data['profile_transportRatings_faster'].isnull(), 'profile_transportRatings_faster'] = -9999
+    
+    # 'profile_transportRatings_bikefun': nan = -9999
+    print(clean_data.profile_transportRatings_bikefun.unique()) 
+    clean_data.loc[clean_data['profile_transportRatings_bikefun'].isnull(), 'profile_transportRatings_bikefun'] = -9999
+
+    # 'profile_transportRatings_weather': nan = -9999
+    print(clean_data.profile_transportRatings_weather.unique())
+    clean_data.loc[clean_data['profile_transportRatings_weather'].isnull(), 'profile_transportRatings_weather'] = -9999   
+    
+    # 'ratings_scene_id': nan = -9999
+    print(clean_data.ratings_scene_id.unique())
+    scene_ids = list(clean_data.ratings_scene_id.unique())
+    
+    a = 1
+    for i in scene_ids:
+        clean_data.loc[clean_data['ratings_scene_id'] == i, 'ratings_scene_id'] = a
+        a = a + 1
+
+    clean_data.loc[clean_data['ratings_scene_id'].isnull(), 'ratings_scene_id'] = -9999   
+    
+    clean_data.to_csv('clean_data.csv')
+    
+#clean_data()
+
 #%% Split data sets
-flattened_data = pd.read_csv('flattened_data.csv')
+clean_data = pd.read_csv('clean_data.csv')
+clean_data.drop(['Unnamed: 0'], axis = 1, inplace = True)
+
 
 #%% Train model(s) and export
 
