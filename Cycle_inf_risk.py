@@ -12,6 +12,9 @@ FUNCTIONS:
         flatten_ratings()
         combine_data()
         clean_data()
+        split_data()
+        train_models()
+        make_predictions()
 
 UPDATE RECORD:
 Date          Version     Author         Description
@@ -27,6 +30,19 @@ import pandas as pd
 import numpy as np
 import json
 import ast
+import matplotlib.pyplot as plt
+
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn import svm
+
+from sklearn.model_selection import train_test_split as tts
+from sklearn.metrics import accuracy_score
+# from sklearn import tree
+import joblib
+
+from sklearn.inspection import permutation_importance
 
 #%% Import data and combine matricies into 3D array
 def load_data():
@@ -192,30 +208,30 @@ def clean_data():
                                 'profile_transportRatings_weather', 'ratings_scene_id', 'ratings_rating']]
     
     # Convert non-numerical values to numerical
-    # 'profile_gender': m = 1, w = 2, d = 3, nan = -9999
+    # 'profile_gender': m = 1, w = 2, d = 3, nan = -99
     print(clean_data.profile_gender.unique())
     clean_data.loc[clean_data['profile_gender'] == 'm', 'profile_gender'] = 1
     clean_data.loc[clean_data['profile_gender'] == 'w', 'profile_gender'] = 2
     clean_data.loc[clean_data['profile_gender'] == 'd', 'profile_gender'] = 3
-    clean_data.loc[clean_data['profile_gender'].isnull(), 'profile_gender'] = -9999
+    clean_data.loc[clean_data['profile_gender'].isnull(), 'profile_gender'] = -99
     
-    # 'profile_zipcode': nan = -9999
+    # 'profile_zipcode': nan = -99
     print(clean_data.profile_zipcode.unique())
-    clean_data.loc[clean_data['profile_zipcode'].isnull(), 'profile_zipcode'] = -9999
+    clean_data.loc[clean_data['profile_zipcode'].isnull(), 'profile_zipcode'] = -99
     
-    # 'profile_ageGroup': nan = -9999
+    # 'profile_ageGroup': nan = -99
     print(clean_data.profile_ageGroup.unique())
-    clean_data.loc[clean_data['profile_ageGroup'].isnull(), 'profile_ageGroup'] = -9999
+    clean_data.loc[clean_data['profile_ageGroup'].isnull(), 'profile_ageGroup'] = -99
     
-    # 'profile_bicycleUse': nan = -9999
+    # 'profile_bicycleUse': nan = -99
     print(clean_data.profile_bicycleUse.unique())
-    clean_data.loc[clean_data['profile_bicycleUse'].isnull(), 'profile_bicycleUse'] = -9999
+    clean_data.loc[clean_data['profile_bicycleUse'].isnull(), 'profile_bicycleUse'] = -99
     
-    # 'profile_hasChildren': True = 1, False = 0, nan = -9999
+    # 'profile_hasChildren': True = 1, False = 0, nan = -99
     print(clean_data.profile_hasChildren.unique())
     clean_data.loc[clean_data['profile_hasChildren'] == True, 'profile_hasChildren'] = 1
     clean_data.loc[clean_data['profile_hasChildren'] == False, 'profile_hasChildren'] = 0
-    clean_data.loc[clean_data['profile_hasChildren'].isnull(), 'profile_hasChildren'] = -9999
+    clean_data.loc[clean_data['profile_hasChildren'].isnull(), 'profile_hasChildren'] = -99
     
     # 'profile_perspective': C = 1, A = 2, P = 3
     print(clean_data.profile_perspective.unique())
@@ -238,23 +254,27 @@ def clean_data():
     # 'profile_transportRatings_pedestrian':
     print(clean_data.profile_transportRatings_pedestrian.unique())  
    
-    # 'profile_transportRatings_safe': nan = -9999
+    # 'profile_transportRatings_safe': nan = -99
     print(clean_data.profile_transportRatings_safe.unique())
-    clean_data.loc[clean_data['profile_transportRatings_safe'].isnull(), 'profile_transportRatings_safe'] = -9999
+    clean_data.loc[clean_data['profile_transportRatings_safe'].isnull(),
+                              'profile_transportRatings_safe'] = -99
     
-    # 'profile_transportRatings_faster': nan = -9999
+    # 'profile_transportRatings_faster': nan = -99
     print(clean_data.profile_transportRatings_faster.unique())
-    clean_data.loc[clean_data['profile_transportRatings_faster'].isnull(), 'profile_transportRatings_faster'] = -9999
+    clean_data.loc[clean_data['profile_transportRatings_faster'].isnull(),
+                              'profile_transportRatings_faster'] = -99
     
-    # 'profile_transportRatings_bikefun': nan = -9999
+    # 'profile_transportRatings_bikefun': nan = -99
     print(clean_data.profile_transportRatings_bikefun.unique()) 
-    clean_data.loc[clean_data['profile_transportRatings_bikefun'].isnull(), 'profile_transportRatings_bikefun'] = -9999
+    clean_data.loc[clean_data['profile_transportRatings_bikefun'].isnull(),
+                              'profile_transportRatings_bikefun'] = -99
 
-    # 'profile_transportRatings_weather': nan = -9999
+    # 'profile_transportRatings_weather': nan = -99
     print(clean_data.profile_transportRatings_weather.unique())
-    clean_data.loc[clean_data['profile_transportRatings_weather'].isnull(), 'profile_transportRatings_weather'] = -9999   
+    clean_data.loc[clean_data['profile_transportRatings_weather'].isnull(),
+                              'profile_transportRatings_weather'] = -99 
     
-    # 'ratings_scene_id': nan = -9999
+    # 'ratings_scene_id': nan = -99
     print(clean_data.ratings_scene_id.unique())
     scene_ids = list(clean_data.ratings_scene_id.unique())
     
@@ -263,18 +283,167 @@ def clean_data():
         clean_data.loc[clean_data['ratings_scene_id'] == i, 'ratings_scene_id'] = a
         a = a + 1
 
-    clean_data.loc[clean_data['ratings_scene_id'].isnull(), 'ratings_scene_id'] = -9999   
+    clean_data.loc[clean_data['ratings_scene_id'].isnull(), 'ratings_scene_id'] = -99 
+    
+    
+    # 'ratings_rating': nan = drop
+    print(clean_data.ratings_rating.unique())
+    clean_data.dropna(inplace=True)
     
     clean_data.to_csv('clean_data.csv')
     
 #clean_data()
 
 #%% Split data sets
-clean_data = pd.read_csv('clean_data.csv')
-clean_data.drop(['Unnamed: 0'], axis = 1, inplace = True)
+def split_data():
+    global X_train
+    global X_test
+    global y_train
+    global y_test
+    
+    clean_data = pd.read_csv('clean_data.csv')
+    clean_data.drop(['Unnamed: 0'], axis = 1, inplace = True)
+    
+    X = clean_data.drop(columns = ['ratings_rating'])
+    y = clean_data['ratings_rating']
+    X_train, X_test, y_train, y_test = tts(X, y, test_size = 0.2)
 
+split_data()
 
 #%% Train model(s) and export
+def train_models():
+    global DTC
+    global RFC
+    global MLP
+    global SVM
 
-#%% Make predictions and assess model accuracy
+    # Decision tree
+    DTC = DecisionTreeClassifier()
+    DTC.fit(X_train, y_train)
+    joblib.dump(DTC, 'Cycle_inf_risk-dtc.joblib')
+    
+    # Random forrest
+    RFC = RandomForestClassifier(random_state=0)
+    RFC.fit(X_train, y_train)
+    joblib.dump(RFC, 'Cycle_inf_risk-rfc.joblib')
+    
+    # Multi layer perception
+    MLP = MLPClassifier(solver='lbfgs', alpha=1e-5,
+                        hidden_layer_sizes=(5, 2), random_state=1)
+    MLP.fit(X_train, y_train)
+    joblib.dump(MLP, 'Cycle_inf_risk-mlp.joblib')
+    
+    # Support vector machines
+    SVM = svm.SVC()
+    SVM.fit(X_train, y_train)
+    joblib.dump(SVM, 'Cycle_inf_risk-svm.joblib')
+    
+#train_models()
+    
+#%% Load trained models, make predictions, and score
+def make_predictions():
+    global X_test
+    global y_test
+    global DTC_predicts
+    global RFC_predicts
+    global individual_prediction
+    global importances
+    global RFC
+    
+    # Random forest
+    RFC = joblib.load('Cycle_inf_risk-rfc.joblib')
+    
+    RFC_predictions = RFC.predict(X_test)
+    RFC_predicts = pd.DataFrame(RFC_predictions)
+    X_test = X_test.reset_index(drop=True)
+    RFC_predicts = pd.concat([X_test, RFC_predicts], axis=1)
+    
+    RFC_score = accuracy_score(y_test, RFC_predictions)
+    print('RFC Score: ' + str(RFC_score))
+    
+    X_individual_data = {'profile_gender':[1], 'profile_ageGroup':[5], 'profile_bicycleUse':[3] ,
+                         'profile_hasChildren':[1],'profile_perspective':[1], 'profile_transportRatings_car':[1],
+                         'profile_transportRatings_public':[2], 'profile_profile_transportRatings_bicycle':[5],
+                         'profile_profile_transportRatings_motorbike':[0], 'profile_profile_transportRatings_pedestrian':[4],
+                         'profile_profile_transportRatings_safe':[0], 'profile_profile_transportRatings_faster':[4],
+                         'profile_profile_transportRatings_bikefun':[4], 'profile_profile_transportRatings_weather':[0],
+                         'ratings_scene_id':[111]}
+    X_individual = pd.DataFrame(data = X_individual_data)
+    individual_prediction = RFC.predict(X_individual)
 
+    # Decision tree
+    #DTC = joblib.load('Cycle_inf_risk-dtc.joblib')
+    
+    #DTC_predictions = DTC.predict(X_test)
+    #DTC_predicts = pd.DataFrame(DTC_predictions)
+    #X_test = X_test.reset_index(drop=True)
+    #DTC_predicts = pd.concat([X_test, DTC_predicts], axis=1)
+    
+    # export tree and score
+    #tree.export_graphviz(DTC, out_file = 'Cycle_inf_risk-dtc.dot',
+    #                     feature_names = ['age', 'gender'],
+    #                     class_names = sorted(y_train.unique()),
+    #                     label = 'all',
+    #                     rounded = True,
+    #                     filled = True)
+    
+    #DTC_score = accuracy_score(y_test, DTC_predictions)
+    #print('DTC Score: ' + str(DTC_score))
+
+    
+    # Multi Layer Perception
+    # load trained model and make predictions
+    #MLP = joblib.load('Cycle_inf_risk-mlp.joblib')
+    
+    #MLP_predictions = MLP.predict(X_test)
+    #MLP_predicts = pd.DataFrame(MLP_predictions)
+    #X_test = X_test.reset_index(drop=True)
+    #MLP_predicts = pd.concat([X_test, MLP_predicts], axis=1)
+    
+    #MLP_score = accuracy_score(y_test, MLP_predictions)
+    #print('MLP Score: ' + str(MLP_score))
+    
+    
+    # Support vector machines
+    # load trained model and make predictions
+    #SVM = joblib.load('Cycle_inf_risk-svm.joblib')
+    
+    #SVM_predictions = SVM.predict(X_test)
+    #SVM_predicts = pd.DataFrame(SVM_predictions)
+    #X_test = X_test.reset_index(drop=True)
+    #SVM_predicts = pd.concat([X_test, SVM_predicts], axis=1)
+    
+    #SVM_score = accuracy_score(y_test, SVM_predictions)
+    #print('SVM Score: ' + str(SVM_score))
+
+#make_predictions()
+
+#%% Assess model
+RFC = joblib.load('Cycle_inf_risk-rfc.joblib')
+
+# Mean decrease in impurity
+importances = RFC.feature_importances_
+std = np.std([tree.feature_importances_ for tree in RFC.estimators_], axis=0)
+
+feature_names = ['gender', 'ageGroup', 'bicycleUse', 'hasChildren','perspective',
+                 'transRating_car', 'transRating_public', 'transRating_bicycle',
+                 'transRating_m.bike', 'transRating_ped.', 'ttransRating_safe',
+                 'transRating_faster', 'transRating_bikefun', 'transRating_weather',
+                 'scene_id']
+forest_importances = pd.Series(importances, index=feature_names)
+
+fig, ax = plt.subplots()
+forest_importances.plot.bar(yerr=std, ax=ax)
+ax.set_title("Feature importances using MDI")
+ax.set_ylabel("Mean decrease in impurity")
+fig.tight_layout()
+
+# Feature permutation
+result = permutation_importance(RFC, X_test, y_test, n_repeats=10, random_state=42, n_jobs=2)
+
+fig, ax = plt.subplots()
+forest_importances.plot.bar(yerr=result.importances_std, ax=ax)
+ax.set_title("Feature importances using permutation on full model")
+ax.set_ylabel("Mean accuracy decrease")
+fig.tight_layout()
+plt.show()
